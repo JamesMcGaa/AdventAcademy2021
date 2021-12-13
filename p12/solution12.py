@@ -1,6 +1,6 @@
 import os
 
-f = open("input12_test.txt", "r")
+f = open("input12.txt", "r")
 input_cast = [line.strip().split("-") for line in  f.readlines()]
 adjacency_matrix = {}
 
@@ -21,13 +21,16 @@ while len(stack) > 0:
     for adj in adjacency_matrix[most_recent]:
         if adj == "end":
             counter += 1
+
         elif adj == adj.lower() and adj in vals:
             if adj == "start" or double_used:
                 pass
             else:
                 stack.append((current+","+adj, True))
+
         # elif adj == adj.lower() and adj in vals:
         #     pass
+
         else: 
             stack.append((current+","+adj, double_used))
 print(counter)
