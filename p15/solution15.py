@@ -63,6 +63,34 @@ for x in range(len(input_cast)):
 # print(dist[(len(input_cast)-1, len(input_cast[0])-1)])
 
 
+##################################### BAD ###############################
+
+# from heapq import *
+
+# vertex_set = []
+# heap_set = set()
+# dist = {}
+# for vertex in graph:
+#     if vertex != START:
+#         dist[vertex] = INFINITY
+#         heappush(vertex_set, (INFINITY, vertex))
+#         heap_set.add(vertex)
+        
+# dist[START] = 0
+# heappush(vertex_set, (0, START))
+# heap_set.add(START)
+
+# while len(vertex_set) > 0:
+#     u = heappop(vertex_set)[1]
+#     heap_set.remove(u)
+#     for neighbor in graph[u]:
+#         if neighbor in heap_set:
+#             alt = dist[u] + graph[u][neighbor]
+#             if alt < dist[neighbor]:
+#                 dist[neighbor] = alt
+
+# print(dist[(len(input_cast)-1, len(input_cast[0])-1)])
+
 ##################################### PRIORITY QUEUE + RETIREMENT ###############################
 
 from heapq import *
@@ -88,11 +116,11 @@ while len(vertex_set) > 0:
             if neighbor not in retired:
                 alt = dist[u] + graph[u][neighbor]
                 if alt < dist[neighbor]:
-                    heappush(vertex_set, (alt, neighbor))
+                    heappush(vertex_set, (alt, neighbor)) # normally we would call decrease_priority here
                     dist[neighbor] = alt
         retired.add(u)
 
-print(dist[(len(input_cast)-1, len(input_cast[0])-1)])
+print(dist[END])
 
 
 ##################################### DIJKSTAR ###############################
