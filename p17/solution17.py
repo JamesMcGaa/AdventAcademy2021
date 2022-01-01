@@ -1,3 +1,5 @@
+import sys
+
 INPUT_X = (265, 287)
 INPUT_Y = (-103, -58)
 
@@ -24,7 +26,6 @@ def hits_x_timestamps(x_velocity, x_ranges):
             x_pos = new_x_pos
             x_velocity = new_x_velocity
 
-
     return timestamps, False
 
 # returns timestamps []
@@ -44,34 +45,46 @@ def hits_y_timestamps(y_velocity, y_ranges):
         y_pos = new_y_pos
         y_velocity = new_y_velocity
 
-
     return timestamps
 
-# print(hits_x_timestamps(7, EXAMPLE_X))
-# print(hits_y_timestamps(2, EXAMPLE_Y))
+def solve(x_range, y_range):
+    perpetuals = {} # {timestamp: [x_vels, ...]}
+    valid_timestamp_counts = {} # {timestamp: [x_vels, ...]}
+    for x_vel in range(1, x_range[1] + 1):
+        timestamps, perpetual = hits_x_timestamps(x_vel, x_range)
+        for timestamp in timestamps:
+            valid_timestamp_counts[timestamp] = valid_timestamp_counts.get(timestamp, []) + [x_vel]
 
-# x_results = {}
-y_results = {}
-valid_timestamps = set()
-lowest_perpetual = 1000000000000000000
-for x_vel in range(1, EXAMPLE_X[1] + 1):
-    timestamps, perpetual = hits_x_timestamps(x_vel, EXAMPLE_X)
-    for timestamp in timestamps:
-        valid_timestamps.add(timestamp)
-    if perpetual and len(timestamps) > 0:
-        lowest_perpetual = min(lowest_perpetual, timestamps[-1])
+        if perpetual and len(timestamps) > 0:
+            perpetuals[timestamps[-1]] = perpetuals.get(timestamps[-1], []) + [x_vel]
 
-    # x_results[x_vel] = hits_x_timestamps(x_vel, EXAMPLE_X)
-import sys
-for y_vel in reversed(range(1, abs(EXAMPLE_Y[0]) + 1)):
-    # y_results[y_vel] = hits_y_timestamps(y_vel, EXAMPLE_Y)
-    possibles = hits_y_timestamps(y_vel, EXAMPLE_Y)
-    if len(possibles) == 0:
-        continue
-    for timestamp in possibles:
-        if timestamp in valid_timestamps or timestamp >= lowest_perpetual:
-            print(y_vel * (y_vel + 1) / 2)
-            sys.exit()
+    counter = 0
+    for y_vel in reversed(range(y_range[0] - 1, abs(y_range[0]) + 1)):
+        possibles = hits_y_timestamps(y_vel, y_range)
+        matches = set()
 
-# def exists_x_for_timestamps(y_timestamps):
-#     for timestamp in timestamps: 
+        if len(possibles) == 0:
+            continue
+
+        for timestamp in possibles:
+            # if timestamp in valid_timestamp_counts or timestamp >= min(perpetuals.keys()):
+            #     print(y_vel * (y_vel + 1) // 2)
+            #     sys.exit()
+
+            for x_vel in valid_timestamp_counts.get(timestamp, []):
+                matches.add(x_vel)
+            
+            for perpetual in perpetuals: 
+                if perpetual <= timestamp:
+                    for x_vel in valid_timestamp_counts.get(perpetual, []):
+                        matches.add(x_vel)
+
+        counter += len(matches)
+    
+    return counter
+
+
+print(solve(EXAMPLE_X, EXAMPLE_Y))
+print(solve(INPUT_X, INPUT_Y))
+
+
