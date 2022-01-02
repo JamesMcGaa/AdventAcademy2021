@@ -1,6 +1,17 @@
 import math
 import ast
-class Leaf:
+from abc import ABC, ABCMeta, abstractmethod
+
+class RecursiveInterface(ABC):
+    @abstractmethod
+    def explode(self): raise NotImplementedError
+    @abstractmethod
+    def split(self): raise NotImplementedError
+    @abstractmethod
+    def magnitude(self): raise NotImplementedError
+
+
+class Leaf(RecursiveInterface):
     def __init__(self, value, parent):
         self.value = value
         self.parent = parent
@@ -14,9 +25,9 @@ class Leaf:
         return False
     
     def split(self):
-        if self.value > 10:
+        if self.value >= 10:
             values = [self.value // 2, int(math.ceil(self.value / 2))]
-            replacement = SnailfishNumber(values, None, None, self.parent)
+            replacement = SnailfishNumber(values, self.parent)
             if self.parent.right == self:
                 self.parent.right = replacement
             else:
@@ -25,12 +36,15 @@ class Leaf:
         
         return False
     
+    def magnitude(self):
+        return self.value
+    
 
-class SnailfishNumber:
-    def __init__(self, inp, additionLeft, additionRight, parent = None):
+class SnailfishNumber(RecursiveInterface):
+    def __init__(self, inp, parent = None, additionLeft = None, additionRight = None): # final 2 args should be internal only
         if inp != None:
-            self.left = snailfishOrRegular(inp[0], self)
-            self.right = snailfishOrRegular(inp[1], self)
+            self.left = SnailfishNumber.snailfish_or_regular(inp[0], self)
+            self.right = SnailfishNumber.snailfish_or_regular(inp[1], self)
             self.parent = parent
         else:
             self.left = additionLeft
@@ -84,11 +98,7 @@ class SnailfishNumber:
                 self.parent.left = Leaf(0, self.parent)
             return True
         else:
-            attempt1 = self.left.explode()  
-            if attempt1: 
-                return True
-            attempt2 = self.right.explode()
-            return attempt2
+            return self.left.explode() or self.right.explode()
     
     def depth(self):
         current = self
@@ -99,40 +109,46 @@ class SnailfishNumber:
         return depth
     
     def split(self):
-        attempt1 = self.left.split()
-        if attempt1:
-            return True
-        return self.right.split()
-        # return self.left.split() or self.right.split()
+        return self.left.split() or self.right.split()
+    
+    def magnitude(self):
+        return 3 * self.left.magnitude() + 2 * self.right.magnitude()
+    
+    @staticmethod
+    def add_and_reduce(sfn1, sfn2):
+        result = SnailfishNumber(None, None, sfn1, sfn2)
+        while True:
+            if result.explode():
+                continue
+            if result.split():
+                continue
+            break
+        return result
+    
+    @classmethod
+    def snailfish_or_regular(cls, inp, parent):
+        if type(inp) == list:
+            return cls(inp, parent)
 
+        return Leaf(inp, parent)
+    
+    
+f = open("input18.txt", "r")
+largest_mag = 0
+expressions = [ast.literal_eval(line.strip()) for line in f.readlines()]
 
-def snailfishOrRegular(inp, parent):
-    if type(inp) == list:
-        return SnailfishNumber(inp, None, None, parent)
+cumulative_sfn = SnailfishNumber(expressions[0])
+for expression in expressions[1:]:
+    sfn_2 =  SnailfishNumber(expression)
+    cumulative_sfn = SnailfishNumber.add_and_reduce(cumulative_sfn, sfn_2)
+    print(cumulative_sfn.toArray())
+print("Cumulative Magnitude:", cumulative_sfn.magnitude())
 
-    return Leaf(inp, parent)
-
-
-
-# inpt = [[3,[2,[1,[7,3]]]],[6,[5,[4,[3,2]]]]]
-# root = SnailfishNumber(inpt, None, None)
-# # root = SnailfishNumber([[3,[2,[1,[7,3]]]],[6,[5,[4,[3,2]]]]])
-# print(root.toArray())
-# root.explode()
-# print(root.toArray())
-
-
-f = open("input18_test.txt", "r")
-input_raw = [ast.literal_eval(line.strip()) for line in f.readlines()]
-expression1 = SnailfishNumber(input_raw[0], None, None)
-for expression2 in input_raw[1:]:
-    expression2 = SnailfishNumber(expression2, None, None)
-    expression1 = SnailfishNumber(None, expression1, expression2)
-    while True:
-        if expression1.explode():
-            continue
-        if expression1.split():
-            continue
-        break
-    expression1.explode()
-print(expression1.toArray())
+for e1 in expressions:
+    for e2 in expressions: 
+        if e1 != e2:
+            e1_snail = SnailfishNumber(e1)
+            e2_snail = SnailfishNumber(e2)
+            result = SnailfishNumber.add_and_reduce(e1_snail, e2_snail)
+            largest_mag = max(largest_mag, result.magnitude())
+print("Max Pairwise Magnitude:", largest_mag)
