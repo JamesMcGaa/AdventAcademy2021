@@ -84,7 +84,11 @@ class SnailfishNumber:
                 self.parent.left = Leaf(0, self.parent)
             return True
         else:
-            return self.left.explode() or self.right.explode()
+            attempt1 = self.left.explode()  
+            if attempt1: 
+                return True
+            attempt2 = self.right.explode()
+            return attempt2
     
     def depth(self):
         current = self
@@ -95,7 +99,11 @@ class SnailfishNumber:
         return depth
     
     def split(self):
-        return self.left.split() or self.right.split()
+        attempt1 = self.left.split()
+        if attempt1:
+            return True
+        return self.right.split()
+        # return self.left.split() or self.right.split()
 
 
 def snailfishOrRegular(inp, parent):
