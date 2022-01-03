@@ -16,17 +16,18 @@ for permutation in all_perms:
                 perm_copy[0,:] *= x
                 perm_copy[1,:] *= y
                 perm_copy[2,:] *= z
-                # if int(np.linalg.det(perm_copy)) == 1:
-                valid_perms.append(perm_copy)
+                if int(np.linalg.det(perm_copy)) == 1:
+                    valid_perms.append(perm_copy)
 
-absolute_points = [] 
+absolute_points = set() 
 def absolute_point_to_pairwise_dists_with_other_abs(abs):
     dists = []
     for point in absolute_points:
-        if not np.array_equal(point, abs):
+        cast_point = np.array(point)
+        if not np.array_equal(cast_point, abs):
             l2 = 0
             for i in range(3):
-                l2 += (point[i] - abs[i]) ** 2
+                l2 += (cast_point[i] - abs[i]) ** 2
             dists.append(l2)
     return dists
 
@@ -53,6 +54,9 @@ for line in lines:
     if line == "":
         scans.append(Scan(data))
         data = None
+    
+    elif line.find("---") != -1:
+        continue
 
     else:
         if data == None:
@@ -61,10 +65,11 @@ for line in lines:
 scans.append(Scan(data))
 
 for abs in scans[0].data:
-    absolute_points.append(abs)
+    absolute_points.add(tuple(abs))
 
 
 def solve_scan(scan):
+    print("STARTING SCAN")
     for perm in scan.list_full_permutations():
         # number_of_points_with_abs_match = 0 #note this is always the same val for each point
         print("---------------------------------------")
@@ -80,9 +85,10 @@ def solve_scan(scan):
 
             #lets see if this point is in abs
             for abs in absolute_points:
-                abs_dists = absolute_point_to_pairwise_dists_with_other_abs(abs)
+                cast_abs = np.array(abs)
+                abs_dists = absolute_point_to_pairwise_dists_with_other_abs(cast_abs)
                 if len(set(abs_dists) & set(dists)) >= 11: #not every point is already in abs
-                    offsets.append(abs - point)
+                    offsets.append(cast_abs - point)
                 
         if len(offsets) > 0:
             uneven = False
@@ -94,11 +100,24 @@ def solve_scan(scan):
                 true_offset_for_this_scan = offsets[0]
                 
                 for point in perm: 
-                    if all([not np.array_equal(point + true_offset_for_this_scan, other) for other in abs]):
-                        absolute_points.append(point)
-                return
-
+                    if tuple(point+true_offset_for_this_scan) not in absolute_points:
+                        absolute_points.add(tuple(point + true_offset_for_this_scan))
+                print("SUCCESS")
+                return True
+    
+    print("FAILURE")
+    return False
+                
+queue = []
 for scan in scans[1:]:
-    print(len(absolute_points))
-    solve_scan(scan)
-print(len(absolute_points))
+    queue.append(scan)
+
+while len(queue) > 0:
+    print(len(queue))
+    scan = queue.pop(0)
+    result = solve_scan(scan)
+    if not result: 
+        queue.append(scan)
+
+print(len(absolute_points), 'wei')
+# pprint.pprint(absolute_points)
