@@ -45,7 +45,7 @@ class Scan:
     
 
 
-f = open("input19_test.txt", "r")
+f = open("input19.txt", "r")
 lines = [line.strip() for line in f.readlines()]
 
 data = None
@@ -70,6 +70,10 @@ for abs in scans[0].data:
 
 def solve_scan(scan):
     print("STARTING SCAN")
+    abs_to_abs_dists = {}
+    for abs in absolute_points:
+        cast_abs = np.array(abs)
+        abs_to_abs_dists[abs] = absolute_point_to_pairwise_dists_with_other_abs(cast_abs)
     for perm in scan.list_full_permutations():
         # number_of_points_with_abs_match = 0 #note this is always the same val for each point
         print("---------------------------------------")
@@ -84,10 +88,9 @@ def solve_scan(scan):
                     dists.append(l2)
 
             #lets see if this point is in abs
-            for abs in absolute_points:
-                cast_abs = np.array(abs)
-                abs_dists = absolute_point_to_pairwise_dists_with_other_abs(cast_abs)
+            for abs, abs_dists in abs_to_abs_dists.items():
                 if len(set(abs_dists) & set(dists)) >= 11: #not every point is already in abs
+                    cast_abs = np.array(abs)
                     offsets.append(cast_abs - point)
                 
         if len(offsets) > 0:
