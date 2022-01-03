@@ -74,8 +74,7 @@ def solve_scan(scan):
     for abs in absolute_points:
         cast_abs = np.array(abs)
         abs_to_abs_dists[abs] = absolute_point_to_pairwise_dists_with_other_abs(cast_abs)
-    for perm in scan.list_full_permutations():
-        # number_of_points_with_abs_match = 0 #note this is always the same val for each point
+    for perm in scan.perms:
         print("---------------------------------------")
         offsets = []
         for point in perm:
@@ -89,7 +88,7 @@ def solve_scan(scan):
 
             #lets see if this point is in abs
             for abs, abs_dists in abs_to_abs_dists.items():
-                if len(set(abs_dists) & set(dists)) >= 11: #not every point is already in abs
+                if len(set(abs_dists) & set(dists)) >= 11: 
                     cast_abs = np.array(abs)
                     offsets.append(cast_abs - point)
                 
@@ -116,7 +115,7 @@ for scan in scans[1:]:
     queue.append(scan)
 
 while len(queue) > 0:
-    print(len(queue))
+    print("\nCurrent Queue Length: ", len(queue))
     scan = queue.pop(0)
     result = solve_scan(scan)
     if not result: 
