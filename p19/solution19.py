@@ -1,12 +1,11 @@
 import numpy as np 
-import pprint
 from itertools import permutations
-import math
 
-x = np.array([[ 1, 0, 0],
-  [ 0, 1, 0],
-  [ 0, 0, 1]])
-all_perms = [np.array(perm) for perm in permutations(x)]
+# Generate Valid Rotation Matrices
+base_permutation_matrix = np.array([[ 1, 0, 0],
+                                    [ 0, 1, 0],
+                                    [ 0, 0, 1]])
+all_perms = [np.array(perm) for perm in permutations(base_permutation_matrix)]
 valid_perms = []
 for permutation in all_perms:
     for x in [-1, 1]:
@@ -19,45 +18,30 @@ for permutation in all_perms:
                 if int(np.linalg.det(perm_copy)) == 1:
                     valid_perms.append(perm_copy)
 
+# Create a set of Scan-0-oriented points
 absolute_points = set() 
 def absolute_point_to_pairwise_dists_with_other_abs(abs):
-    dists = []
-    for point in absolute_points:
-        cast_point = np.array(point)
-        if not np.array_equal(cast_point, abs):
-            l2 = 0
-            for i in range(3):
-                l2 += (cast_point[i] - abs[i]) ** 2
-            dists.append(l2)
-    return dists
+    return set([np.sum((np.array(abs) - np.array(other_abs))**2) for other_abs in absolute_points])
 
 class Scan:
-    def __init__(self, data, is_scan_0=False):
-        self.data = data
-        self.proper_data = data if is_scan_0 else False
-        self.perms = self.list_full_permutations()
+    def __init__(self, data):
+        self.data = data # list of lists
+        self.perms = self.list_full_permutations() # list of numpy arrays (representing rotated point matrix)
     
     def list_full_permutations(self):
-        results = []
-        for perm in valid_perms:
-            results.append(np.matmul(self.data, perm))
-        return results
-    
+        return [np.matmul(self.data, perm) for perm in valid_perms]
 
-
+# Read files and setup scans and absolute_points
 f = open("input19.txt", "r")
 lines = [line.strip() for line in f.readlines()]
-
 data = None
 scans = []
 for line in lines:
     if line == "":
         scans.append(Scan(data))
         data = None
-    
     elif line.find("---") != -1:
         continue
-
     else:
         if data == None:
             data = []
@@ -67,43 +51,26 @@ scans.append(Scan(data))
 for abs in scans[0].data:
     absolute_points.add(tuple(abs))
 
-
-def solve_scan(scan):
-    print("STARTING SCAN")
-    abs_to_abs_dists = {}
-    for abs in absolute_points:
-        cast_abs = np.array(abs)
-        abs_to_abs_dists[abs] = absolute_point_to_pairwise_dists_with_other_abs(cast_abs)
+# Orient successive scans
+def solve_scan(scan, abs_to_abs_dists, true_offsets):
     for perm in scan.perms:
-        print("---------------------------------------")
         offsets = []
         for point in perm:
-            dists = []
-            for other in perm:
-                if not np.array_equal(point, other):
-                    l2 = 0
-                    for i in range(3):
-                        l2 += (point[i] - other[i]) ** 2
-                    dists.append(l2)
+            dists = set([np.sum((point-other)**2) for other in perm])
 
-            #lets see if this point is in abs
             for abs, abs_dists in abs_to_abs_dists.items():
-                if len(set(abs_dists) & set(dists)) >= 11: 
+                if len(abs_dists & dists) >= 12: # If this dists match a similar fingerprint
                     cast_abs = np.array(abs)
                     offsets.append(cast_abs - point)
-                
-        if len(offsets) > 0:
-            uneven = False
-            for offset in offsets:
-                if not np.array_equal(offsets[0], offset):
-                    uneven = True
-            
-            if not uneven:
+        
+        #check that the permutation/orientation aligns everything properly
+        if len(offsets) > 0 and all(np.array_equal(offset, offsets[0]) for offset in offsets):
                 true_offset_for_this_scan = offsets[0]
-                
+                true_offsets.append(true_offset_for_this_scan)
                 for point in perm: 
-                    if tuple(point+true_offset_for_this_scan) not in absolute_points:
-                        absolute_points.add(tuple(point + true_offset_for_this_scan))
+                    scan_0_oriented_point = tuple(point + true_offset_for_this_scan)
+                    if scan_0_oriented_point not in absolute_points:
+                        absolute_points.add(scan_0_oriented_point)
                 print("SUCCESS")
                 return True
     
@@ -114,12 +81,23 @@ queue = []
 for scan in scans[1:]:
     queue.append(scan)
 
+abs_to_abs_dists = {}
+for abs in absolute_points:
+    abs_to_abs_dists[abs] = absolute_point_to_pairwise_dists_with_other_abs(abs)
+
+true_offsets = [np.array((0,0,0))]
 while len(queue) > 0:
-    print("\nCurrent Queue Length: ", len(queue))
+    print("\nCurrent Queue Length:", len(queue))
     scan = queue.pop(0)
-    result = solve_scan(scan)
+    result = solve_scan(scan, abs_to_abs_dists, true_offsets)
+    if result: 
+        for abs in absolute_points: # recompute
+            abs_to_abs_dists[abs] = absolute_point_to_pairwise_dists_with_other_abs(abs)
     if not result: 
         queue.append(scan)
 
-print(len(absolute_points), 'wei')
-# pprint.pprint(absolute_points)
+# Part A
+print(len(absolute_points))
+
+# Part B
+print(max([np.abs(np.array(A) - np.array(B)).sum() for A in true_offsets for B in true_offsets]))
