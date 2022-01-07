@@ -3,6 +3,8 @@ import random
 import time
 import copy
 
+
+
 HORIZONTAL_TO_LEGAL = {
     3: "A",
     5: "B",
@@ -51,9 +53,8 @@ class State():
         return str(self.towers) + str(self.hallways)
         
     
-    def get_neighbors(self):
+    def get_neighbors(self, printable = False):
         neighbors = []
-
         #pop from tower to hallway 
         for horzontal, tower_list in self.towers.items():
             
@@ -97,48 +98,35 @@ class State():
             #non . chars
             if hallway_value in VALUE_TO_TOWER_IDX: 
                 tower_idx = VALUE_TO_TOWER_IDX[hallway_value]
-                exists_space = set(self.towers[tower_idx]) == set([VALUE_TO_TOWER_IDX[hallway_value], "."])
+                # print(set([HORIZONTAL_TO_LEGAL[tower_idx], "."]), set(self.towers[tower_idx]))
+                exists_space = set(self.towers[tower_idx]) == set([HORIZONTAL_TO_LEGAL[tower_idx], "."]) or set(self.towers[tower_idx]) == set(".")
+
+
                 open_path = True
                 #make sure everything in between is clear
                 for other_hallway_idx, other_hallway_val in self.hallways.items():
-                    low = min(other_hallway_idx, hallway_idx)
-                    hi = max(other_hallway_idx, hallway_idx)
-                    if low <= other_hallway_idx and other_hallway_idx <= hi and other_hallway_val != ".":
+                    low = min(hallway_idx, tower_idx)
+                    hi = max(hallway_idx, tower_idx)
+                    if other_hallway_idx != hallway_idx and low <= other_hallway_idx and other_hallway_idx <= hi and other_hallway_val != ".":
                         open_path = False
                         break
-                
+
                 if exists_space and open_path:
                     tower_height = 3
-                    while tower_height == VALUE_TO_TOWER_IDX[hallway_value]:
+                    while self.towers[tower_idx][tower_height] == HORIZONTAL_TO_LEGAL[tower_idx]:
                         tower_height -= 1
+                    if printable:
+                        print(tower_height)
                     new_hallways = copy.deepcopy(self.hallways)
                     new_towers = copy.deepcopy(self.towers)
                     new_hallways[hallway_idx] = "."
                     new_towers[tower_idx][tower_height] = hallway_value
+
                     neighbors.append(
-                        (State(new_towers, new_hallways), (abs(target_hallway - horzontal) + height + 1) * VALUE_TO_COST[top_nonzero])
+                        (State(new_towers, new_hallways), (abs(hallway_idx - tower_idx) + tower_height + 1) * VALUE_TO_COST[hallway_value])
                     )
 
         return neighbors 
-
-
-# def nw(s):
-#     return "".join(s.split())
-
-now = time.time()         
-graph = Graph()
-# START_EXAMPLE =  "..BDDA.CCBD.BBAC.DACA.."
-# END = "..AAAA.BBBB.CCCC.DDDD.."
-# P0 = "..BDDA.CCBD.BBAC..ACA.D"
-# P1 = "A.BDDA.CCBD.BBAC...CA.D"
-# P2 = "A.BDDA.CCBD..BAC...CABD"
-# P3 = "A.BDDA.CCBD...ACB..CABD"
-# P4 = nw("AA BDDA . CCBD . ...C B ..CA BD")
-# P5 = nw("AA BDDA . .CBD C ...C B ..CA BD")
-# P6 = nw("AA BDDA . .CBD . C..C B ..CA BD")
-# P7 = nw("AA BDDA . .CBD . .C.C B ..CA BD")
-# P8 = nw("AA BDDA . .CBD . ..CC B ..CA BD")
-# stack = [State(START_EXAMPLE, None)]
 
 START_EXAMPLE = State(
                         {
@@ -175,31 +163,238 @@ END = State(
                     11: ".",
                 },
             )
+
+L2 = State(
+                {
+                    3: ["B", "D", "D", "A"],
+                    5: ["C", "C", "B", "D"],
+                    7: ["B", "B", "A", "C"],
+                    9: [".", "A", "C", "A"],
+                },
+                {
+                    1: ".",
+                    2: ".",
+                    4: ".",
+                    6: ".",
+                    8: ".",
+                    10: ".",
+                    11: "D",
+                },
+            )
+
+L4 = State(
+                {
+                    3: ["B", "D", "D", "A"],
+                    5: ["C", "C", "B", "D"],
+                    7: [".", "B", "A", "C"],
+                    9: [".", ".", "C", "A"],
+                },
+                {
+                    1: "A",
+                    2: ".",
+                    4: ".",
+                    6: ".",
+                    8: ".",
+                    10: "B",
+                    11: "D",
+                },
+            )
+L5 = State(
+                {
+                    3: ["B", "D", "D", "A"],
+                    5: ["C", "C", "B", "D"],
+                    7: [".", ".", "A", "C"],
+                    9: [".", ".", "C", "A"],
+                },
+                {
+                    1: "A",
+                    2: ".",
+                    4: ".",
+                    6: ".",
+                    8: "B",
+                    10: "B",
+                    11: "D",
+                },
+            )
+L6 = State(
+                {
+                    3: ["B", "D", "D", "A"],
+                    5: ["C", "C", "B", "D"],
+                    7: [".", ".", ".", "C"],
+                    9: [".", ".", "C", "A"],
+                },
+                {
+                    1: "A",
+                    2: "A",
+                    4: ".",
+                    6: ".",
+                    8: "B",
+                    10: "B",
+                    11: "D",
+                },
+            )
+L7a = State(
+                {
+                    3: ["B", "D", "D", "A"],
+                    5: [".", "C", "B", "D"],
+                    7: [".", ".", ".", "C"],
+                    9: [".", ".", "C", "A"],
+                },
+                {
+                    1: "A",
+                    2: "A",
+                    4: ".",
+                    6: "C",
+                    8: "B",
+                    10: "B",
+                    11: "D",
+                },
+            )
+L7 = State(
+                {
+                    3: ["B", "D", "D", "A"],
+                    5: [".", "C", "B", "D"],
+                    7: [".", ".", "C", "C"],
+                    9: [".", ".", "C", "A"],
+                },
+                {
+                    1: "A",
+                    2: "A",
+                    4: ".",
+                    6: ".",
+                    8: "B",
+                    10: "B",
+                    11: "D",
+                },
+            )
+L8 = State(
+                {
+                    3: ["B", "D", "D", "A"],
+                    5: [".", ".", "B", "D"],
+                    7: [".", "C", "C", "C"],
+                    9: [".", ".", "C", "A"],
+                },
+                {
+                    1: "A",
+                    2: "A",
+                    4: ".",
+                    6: ".",
+                    8: "B",
+                    10: "B",
+                    11: "D",
+                },
+            )
+L10 = State(
+                {
+                    3: ["B", "D", "D", "A"],
+                    5: [".", ".", ".", "."],
+                    7: [".", "C", "C", "C"],
+                    9: [".", ".", "C", "A"],
+                },
+                {
+                    1: "A",
+                    2: "A",
+                    4: "D",
+                    6: "B",
+                    8: "B",
+                    10: "B",
+                    11: "D",
+                },
+            )
+L11 = State(
+                {
+                    3: ["B", "D", "D", "A"],
+                    5: [".", ".", ".", "B"],
+                    7: [".", "C", "C", "C"],
+                    9: [".", ".", "C", "A"],
+                },
+                {
+                    1: "A",
+                    2: "A",
+                    4: "D",
+                    6: ".",
+                    8: "B",
+                    10: "B",
+                    11: "D",
+                },
+            )
+L12 = State(
+                {
+                    3: ["B", "D", "D", "A"],
+                    5: [".", ".", "B", "B"],
+                    7: [".", "C", "C", "C"],
+                    9: [".", ".", "C", "A"],
+                },
+                {
+                    1: "A",
+                    2: "A",
+                    4: "D",
+                    6: ".",
+                    8: ".",
+                    10: "B",
+                    11: "D",
+                },
+            )
+L13 = State(
+                {
+                    3: ["B", "D", "D", "A"],
+                    5: [".", "B", "B", "B"],
+                    7: [".", "C", "C", "C"],
+                    9: [".", ".", "C", "A"],
+                },
+                {
+                    1: "A",
+                    2: "A",
+                    4: "D",
+                    6: ".",
+                    8: ".",
+                    10: ".",
+                    11: "D",
+                },
+            )
+L15 = State(
+                {
+                    3: ["B", "D", "D", "A"],
+                    5: [".", "B", "B", "B"],
+                    7: ["C", "C", "C", "C"],
+                    9: [".", ".", ".", "."],
+                },
+                {
+                    1: "A",
+                    2: "A",
+                    4: "D",
+                    6: ".",
+                    8: ".",
+                    10: "A",
+                    11: "D",
+                },
+            )
+
+
+START_INPUT = State(
+                        {
+                            3: ["D", "D", "D", "B"],
+                            5: ["B", "C", "B", "D"],
+                            7: ["A", "B", "A", "A"],
+                            9: ["C", "A", "C", "C"],
+                        },
+                        {
+                            1: ".",
+                            2: ".",
+                            4: ".",
+                            6: ".",
+                            8: ".",
+                            10: ".",
+                            11: ".",
+                        },
+                    )
+graph = Graph()
         
 from collections import deque
 q = deque()
-q.append(
-    State(
-        {
-            3: ["B", "D", "D", "A"],
-            5: ["C", "C", "B", "D"],
-            7: ["B", "B", "A", "C"],
-            9: ["D", "A", "C", "A"],
-        },
-        {
-            1: ".",
-            2: ".",
-            4: ".",
-            6: ".",
-            8: ".",
-            10: ".",
-            11: ".",
-        },
-    )
-)
-
+q.append(START_INPUT)
 seen = set()
-seen.add(START_EXAMPLE.to_string())
+seen.add(START_INPUT.to_string())
 
 while len(q) > 0: 
     current = q.popleft()
@@ -211,3 +406,4 @@ while len(q) > 0:
             seen.add(new_state_str)
             q.append(neighbor)
 
+print(find_path(graph, START_INPUT.to_string(), END.to_string()))
